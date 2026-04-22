@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Agent Bot Prototype</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .telegram-bg {
+            background-image: url('https://i.pinimg.com/originals/8f/ba/cb/8fbacbd464e996966eb9d4a6b7a9c21e.jpg');
+            background-size: cover;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Mock Icons mapping since we are in HTML
+        const Icon = ({ name, className }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} className={className}></i>;
+        };
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('digest');
+            const [digestView, setDigestView] = useState('overview');
+            const [unsubState, setUnsubState] = useState('initial');
+            const [replyState, setReplyState] = useState('initial');
+            const [searchState, setSearchState] = useState('searching');
+            const [openedEmail, setOpenedEmail] = useState(null);
+
+            useEffect(() => {
+                setUnsubState('initial');
+                setReplyState('initial');
+                setOpenedEmail(null);
+                setDigestView('overview');
+                
+                if (activeTab === 'search') {
+                    setSearchState('searching');
+                    const timer = setTimeout(() => setSearchState('results'), 1200);
+                    return () => clearTimeout(timer);
+                }
+            }, [activeTab]);
+
+            const tabs = [
+                { id: 'digest', label: '1. Дайджест', icon: 'mail' },
+                { id: 'unsubscribe', label: '2. Отписки', icon: 'settings' },
+                { id: 'search', label: '3. Поиск', icon: 'search' },
+                { id: 'reply', label: '4. Ответ на письмо', icon: 'zap' }
+            ];
+
+            const renderTelegramMockup = () => {
+                return (
+                    <div className="w-[320px] h-[600px] bg-[#8BABC1] rounded-[30px] p-3 shadow-2xl relative border-8 border-gray-900 flex flex-col mx-auto overflow-hidden">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-10"></div>
+                        
+                        <div className="bg-[#5B90B9] text-white p-3 pt-6 rounded-t-[20px] flex items-center shadow-md z-0 shrink-0">
+                            <div className="w-10 h-10 bg-gradient-to-tr from-blue-400 to-blue-600 rounded-full flex items-center justify-center font-bold text-lg shadow-sm border border-white/20 text-white">
+                                <Icon name="bot" className="w-6 h-6" />
+                            </div>
+                            <div className="ml-3">
+                                <div className="font-semibold text-[16px] leading-tight">Mail Agent</div>
+                                <div className="text-[12px] text-blue-100">bot</div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-3 space-y-4 telegram-bg flex flex-col justify-end pb-4">
+                            <div className="flex flex-col space-y-4 w-full h-full justify-start mt-2">
+                                
+                                {activeTab === 'digest' && digestView === 'overview' && (
+                                    <div className="flex flex-col space-y-4">
+                                        <div className="flex flex-col max-w-[90%] animate-in">
+                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-[14px]">
+                                                <b>📅 Дайджест 22 апреля</b><br/><br/>
+                                                🔴 <b>Важное:</b> 2 письма<br/>
+                                                📰 <b>Новости:</b> 1 письмо (есть саммари)<br/>
+                                                🟡 <b>К сведению:</b> 5 писем<br/>
+                                                🔵 <b>Рассылки:</b> 14 писем<br/>
+                                            </div>
+                                            <div className="flex flex-col gap-[2px] mt-[2px]">
+                                                <div className="flex gap-[2px]">
+                                                    <button onClick={() => setDigestView('important')} className="flex-1 bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">🔴 Важное (2)</button>
+                                                    <button onClick={() => setDigestView('news')} className="flex-1 bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">📰 Новости (1)</button>
+                                                </div>
+                                                <button onClick={() => setActiveTab('unsubscribe')} className="w-full bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">⚙️ Управление рассылками</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'digest' && digestView === 'important' && !openedEmail && (
+                                    <div className="flex flex-col max-w-[90%] animate-in">
+                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-[14px]">
+                                            <b>🔴 Важное (2)</b><br/><br/>
+                                            1. <b>Иван:</b> Договор на подпись<br/>
+                                            <span className="text-gray-500 text-[13px]">Просит подписать до пятницы</span><br/><br/>
+                                            2. <b>Acme Bank:</b> Платёж отклонен<br/>
+                                            <span className="text-gray-500 text-[13px]">Недостаточно средств</span>
+                                        </div>
+                                        <div className="flex flex-col gap-[2px] mt-[2px]">
+                                            <div className="flex gap-[2px]">
+                                                <button onClick={() => setOpenedEmail('ivan')} className="flex-1 bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">📖 Читать Ивана</button>
+                                                <button onClick={() => setOpenedEmail('bank')} className="flex-1 bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">📖 Читать Bank</button>
+                                            </div>
+                                            <button onClick={() => setDigestView('overview')} className="w-full bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">⬅️ Назад в меню</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'digest' && digestView === 'news' && (
+                                    <div className="flex flex-col max-w-[90%] animate-in">
+                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-[14px]">
+                                            <b>📰 Новости: Саммари</b><br/>
+                                            От: TechCrunch Weekly<br/>
+                                            <hr className="my-2 border-gray-200"/>
+                                            • <b>ИИ-индустрия:</b> Компании привлекли $2 млрд инвестиций за неделю.<br/>
+                                            • <b>Гаджеты:</b> Представлен новый процессор M5 с упором на нейросети.<br/>
+                                            • <b>Стартапы:</b> 5 новых сервисов для автоматизации рутины.
+                                        </div>
+                                        <div className="flex flex-col gap-[2px] mt-[2px]">
+                                            <button onClick={() => setDigestView('overview')} className="w-full bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">⬅️ Назад в меню</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'digest' && openedEmail === 'ivan' && (
+                                    <div className="flex flex-col max-w-[90%] animate-in">
+                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-[14px]">
+                                            <b>От:</b> Иван Петров<br/>
+                                            <b>Тема:</b> Договор на подпись<br/>
+                                            <hr className="my-2 border-gray-200"/>
+                                            Привет! Посмотри, пожалуйста, приложенный договор. Нужно подписать до пятницы, иначе сорвем сроки.<br/><br/>
+                                            <div className="bg-blue-50 p-2 rounded-lg text-[12px] text-blue-700 font-medium flex items-center gap-2 border border-blue-100">
+                                                <Icon name="file-code" className="w-4 h-4" /> dogovor_v2.pdf
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-[2px] mt-[2px]">
+                                            <button onClick={() => setActiveTab('reply')} className="w-full bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">✍️ Ответить Ивану</button>
+                                            <button onClick={() => setOpenedEmail(null)} className="w-full bg-white/80 hover:bg-white text-[#2a83e5] font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">⬅️ Назад к списку</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'unsubscribe' && unsubState === 'initial' && (
+                                    <div className="flex flex-col max-w-[90%] animate-in">
+                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-[14px]">
+                                            <b>❓ Обнаружены новые рассылки (2)</b><br/><br/>
+                                            Они скрыты из дайджеста. От чего отписаться навсегда?
+                                        </div>
+                                        <div className="flex flex-col gap-[2px] mt-[2px]">
+                                            <button onClick={() => setUnsubState('technews')} className="w-full bg-white/80 hover:bg-white text-red-500 font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">🗑 Отписаться от TechNews</button>
+                                            <button onClick={() => setUnsubState('keep')} className="w-full bg-white/80 hover:bg-white text-green-600 font-medium py-2 rounded-lg shadow-sm backdrop-blur-sm text-[13px]">✅ Оставить всё</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'unsubscribe' && unsubState === 'technews' && (
+                                    <div className="flex flex-col max-w-[90%] animate-in">
+                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-[14px]">
+                                            <Icon name="check-circle-2" className="w-4 h-4 text-green-500 inline mr-1" />
+                                            <b>Готово!</b><br/><br/>
+                                            Я отписал тебя от <b>TechNews</b> в самой почте. Больше не потревожат.
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'reply' && (
+                                    <div className="flex flex-col space-y-4">
+                                        <div className="flex justify-start animate-in">
+                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm w-[85%] shadow-sm text-[14px] border-l-4 border-blue-500">
+                                                Ответ на: <b>«Договор»</b><br/>
+                                                <i className="text-gray-600 text-[13px]">Привет! Во сколько созваниваемся?</i>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-start animate-in">
+                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-sm w-[85%] shadow-sm text-[14px]">
+                                                Напиши текст ответа:
+                                            </div>
+                                        </div>
+                                        {replyState === 'sent' && (
+                                            <div className="flex justify-end animate-in">
+                                                <div className="bg-[#E3FFC8] text-gray-800 p-2 px-3 rounded-2xl rounded-tr-sm shadow-sm text-[14px]">
+                                                    Привет! Да, буду. В 15:00 ок?
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="bg-white p-2 flex gap-2 shrink-0 rounded-b-[20px] items-center px-4 relative z-20">
+                            <div className="w-6 h-6 rounded-full bg-gray-200 shrink-0"></div>
+                            <div className="flex-1 h-8 bg-gray-100 rounded-full border border-gray-200 flex items-center px-3 text-[13px]">
+                                <span className={replyState === 'sent' ? 'text-gray-400' : 'text-gray-800'}>
+                                    {activeTab === 'reply' && replyState === 'initial' ? 'Привет! Да, буду. В 15:00 ок?' : 'Сообщение...'}
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => activeTab === 'reply' && setReplyState('sent')}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${activeTab === 'reply' && replyState === 'initial' ? 'bg-blue-500' : 'bg-gray-300'}`}
+                            >
+                                <Icon name="arrow-right" className="w-4 h-4 text-white" />
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <div className="max-w-6xl mx-auto space-y-8">
+                        <header className="text-center space-y-2 py-8">
+                            <h1 className="text-4xl font-extrabold text-gray-900">Mail Agent Bot</h1>
+                            <p className="text-xl text-gray-500">Прототип интерфейса и архитектура</p>
+                        </header>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100">
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold flex items-center gap-3">
+                                    <Icon name="smartphone" className="w-6 h-6 text-blue-500" />
+                                    1. Telegram UI / Кнопки
+                                </h2>
+                                <p className="text-gray-600 text-lg">
+                                    Бот автоматизирует работу с почтой через привычный интерфейс Telegram. Результаты обновляют текущее сообщение, не создавая лишнего шума в чате.
+                                </p>
+                                <div className="flex flex-col gap-3 pt-4">
+                                    {tabs.map(tab => (
+                                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-4 p-4 rounded-xl text-left transition-all ${activeTab === tab.id ? 'bg-blue-50 border-blue-200 border shadow-sm' : 'bg-gray-50 border border-transparent hover:bg-gray-100'}`}>
+                                            <div className={`p-2 rounded-lg ${activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-white text-gray-500 shadow-sm'}`}>
+                                                <Icon name={tab.icon} className="w-4 h-4" />
+                                            </div>
+                                            <div className={`font-semibold ${activeTab === tab.id ? 'text-blue-900' : 'text-gray-700'}`}>{tab.label}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex justify-center bg-gray-50 py-10 rounded-2xl">
+                                {renderTelegramMockup()}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 space-y-10">
+                            <div className="space-y-4">
+                                <h2 className="text-2xl font-bold flex items-center gap-3">
+                                    <Icon name="server" className="w-6 h-6 text-blue-500" />
+                                    2. Архитектура
+                                </h2>
+                                <p className="text-gray-600 text-lg">Схема работы с защитой данных и оркестрацией.</p>
+                            </div>
+                            <div className="flex flex-col lg:flex-row gap-6 justify-between">
+                                <div className="flex-1 bg-red-50 p-6 rounded-2xl border border-red-100 flex flex-col items-center text-center">
+                                    <Icon name="mail" className="w-8 h-8 text-red-600 mb-4" />
+                                    <h3 className="font-bold text-lg mb-2">Gmail API</h3>
+                                    <p className="text-sm text-gray-600">Загрузка почты с нескольких ящиков одновременно.</p>
+                                </div>
+                                <div className="flex-1 bg-blue-50 p-6 rounded-2xl border border-blue-100 flex flex-col items-center text-center">
+                                    <Icon name="shield" className="w-8 h-8 text-blue-600 mb-4" />
+                                    <h3 className="font-bold text-lg mb-2">Анонимизация</h3>
+                                    <p className="text-sm text-gray-600">Скрытие сумм и имен до отправки текста в ИИ.</p>
+                                </div>
+                                <div className="flex-1 bg-purple-50 p-6 rounded-2xl border border-purple-100 flex flex-col items-center text-center">
+                                    <Icon name="bot" className="w-8 h-8 text-purple-600 mb-4" />
+                                    <h3 className="font-bold text-lg mb-2">ИИ (Claude)</h3>
+                                    <p className="text-sm text-gray-600">Анализ контента на базе переиспользуемого Skill-файла.</p>
+                                </div>
+                                <div className="flex-1 bg-green-50 p-6 rounded-2xl border border-green-100 flex flex-col items-center text-center">
+                                    <Icon name="smartphone" className="w-8 h-8 text-green-600 mb-4" />
+                                    <h3 className="font-bold text-lg mb-2">Telegram Bot</h3>
+                                    <p className="text-sm text-gray-600">Отрисовка дайджеста и управление кнопками.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
