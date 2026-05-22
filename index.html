@@ -1,689 +1,534 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mail Agent Bot</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
-        .telegram-bg {
-            background-color: #749EBC;
-            background-image: url('https://i.pinimg.com/originals/8f/ba/cb/8fbacbd464e996966eb9d4a6b7a9c21e.jpg');
-            background-size: cover;
-            background-position: center;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Почтовый агент</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* Flow diagram */
-        .flow-arrow { position: relative; }
-        .flow-arrow::after {
-            content: '→';
-            position: absolute;
-            right: -18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-            font-size: 18px;
-        }
-        .flow-arrow-down { position: relative; }
-        .flow-arrow-down::after {
-            content: '↓';
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #94a3b8;
-            font-size: 18px;
-        }
-    </style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #222;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --muted: #888;
+      --accent: #4f8ef7;
+      --accent-dim: rgba(79,142,247,0.12);
+      --green: #3ecf8e;
+      --green-dim: rgba(62,207,142,0.1);
+      --amber: #f59e0b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: rgba(15,15,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 32px;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    nav a {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    nav a:hover { color: var(--text); }
+
+    /* LAYOUT */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 96px 32px 80px;
+    }
+
+    section { margin-bottom: 80px; }
+
+    /* HERO */
+    .hero-tag {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 44px;
+      font-weight: 600;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-sub {
+      font-size: 17px;
+      color: var(--muted);
+      max-width: 540px;
+      line-height: 1.7;
+    }
+
+    /* SECTION HEADINGS */
+    h2 {
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* FLOW DIAGRAM */
+    .flow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .flow-node {
+      flex: 1;
+      min-width: 120px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 14px;
+      cursor: default;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .flow-node:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .flow-node.hub {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .node-num {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .node-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .node-sub {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--border);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ANIMATED FLOW DOT */
+    .flow-track {
+      position: relative;
+      height: 2px;
+      background: var(--border);
+      margin: 28px 0;
+      border-radius: 1px;
+      overflow: visible;
+    }
+
+    .flow-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: absolute;
+      top: -3px;
+      left: 0;
+      animation: slide 3s linear infinite;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    @keyframes slide {
+      0%   { left: 0%;   opacity: 0; }
+      5%   { opacity: 1; }
+      95%  { opacity: 1; }
+      100% { left: 100%; opacity: 0; }
+    }
+
+    /* STEPS */
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      transition: border-color 0.2s;
+    }
+
+    .step-card:hover { border-color: #444; }
+
+    .step-num {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* SAFETY */
+    .safety {
+      border-left: 2px solid var(--green);
+      background: var(--green-dim);
+      border-radius: 0 10px 10px 0;
+      padding: 20px 24px;
+    }
+
+    .safety-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 10px;
+    }
+
+    .safety-items {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 2;
+    }
+
+    .safety-items span {
+      color: var(--green);
+      margin-right: 6px;
+    }
+
+    /* FEATURES */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .feat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .feat-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feat-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 500;
+      margin-left: auto;
+    }
+
+    .badge-mvp {
+      background: rgba(79,142,247,0.15);
+      color: var(--accent);
+      border: 1px solid rgba(79,142,247,0.3);
+    }
+
+    .badge-later {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    /* STACK */
+    .stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: var(--surface);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 32px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
 </head>
-<body class="text-gray-900">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        
-        const Icon = ({ name, className }) => {
-            useEffect(() => { lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} className={className}></i>;
-        };
+<nav>
+  <span class="nav-logo">Почтовый агент</span>
+  <a href="#flow">Архитектура</a>
+  <a href="#how">Как работает</a>
+  <a href="#safety">Безопасность</a>
+  <a href="#features">Возможности</a>
+</nav>
 
-        function App() {
-            const [activeTab, setActiveTab] = useState('digest');
-            const [digestView, setDigestView] = useState('overview');
-            const [searchState, setSearchState] = useState('idle'); 
-            const [openedEmail, setOpenedEmail] = useState(null);
-            const [replyState, setReplyState] = useState('none');
-            const [replyTarget, setReplyTarget] = useState(''); 
-            
-            const [unsubItems, setUnsubItems] = useState([
-                { id: 1, name: 'Coursera', count: 12, active: true },
-                { id: 2, name: 'Grammarly', count: 9, active: true },
-                { id: 3, name: 'Rozetka', count: 7, active: true },
-                { id: 4, name: 'Prom.ua', count: 6, active: true },
-                { id: 5, name: 'Netflix', count: 5, active: true }
-            ]);
-            const [unsubMessage, setUnsubMessage] = useState(null);
+<main>
 
-            const [accounts, setAccounts] = useState([
-                { id: 1, email: 'work@company.com' },
-                { id: 2, email: 'personal@gmail.com' }
-            ]);
-            const [connectState, setConnectState] = useState('idle');
+  <!-- HERO -->
+  <section>
+    <div class="hero-tag">v0.1 · Концепция</div>
+    <h1>Почтовый<br>агент</h1>
+    <p class="hero-sub">
+      Система автоматической обработки входящей почты.
+      Собирает письма со всех ящиков, формирует дайджест
+      и доставляет в Telegram — без доступа к оригинальным ящикам.
+    </p>
+  </section>
 
-            useEffect(() => {
-                setOpenedEmail(null);
-                setDigestView('overview');
-                setReplyState('none');
-                setUnsubMessage(null);
-                setConnectState('idle');
-                if (activeTab === 'search') setSearchState('idle'); 
-            }, [activeTab]);
+  <!-- FLOW -->
+  <section id="flow">
+    <h2>Архитектура · Поток данных</h2>
+    <div class="flow">
+      <div class="flow-node">
+        <div class="node-num">01 · ИСТОЧНИКИ</div>
+        <div class="node-title">Ящики-доноры</div>
+        <div class="node-sub">Рабочая и личная почта. Стандартная пересылка Gmail.</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node hub">
+        <div class="node-num">02 · ХАБ</div>
+        <div class="node-title">Технический Gmail</div>
+        <div class="node-sub">Изолированный ящик. Принимает слепки. Оригиналы не трогаются.</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="node-num">03 · ДВИЖОК</div>
+        <div class="node-title">Google Apps Script</div>
+        <div class="node-sub">Облачный скрипт Google. Читает письма, формирует JSON.</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="node-num">04 · ШЛЮЗ</div>
+        <div class="node-title">Node.js API</div>
+        <div class="node-sub">Сервер DigitalOcean. Принимает данные, форматирует.</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="node-num">05 · ВЫВОД</div>
+        <div class="node-title">Telegram</div>
+        <div class="node-sub">Дайджест или мгновенный алерт — в мессенджер.</div>
+      </div>
+    </div>
+    <div class="flow-track">
+      <div class="flow-dot"></div>
+    </div>
+  </section>
 
-            const startSearch = () => {
-                setSearchState('typing');
-                setTimeout(() => {
-                    setSearchState('searching');
-                    setTimeout(() => setSearchState('results'), 1200);
-                }, 600);
-            };
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <h2>Как это работает · 6 шагов</h2>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">ШАГ 01</div>
+        <div class="step-title">Пересылка</div>
+        <div class="step-desc">Письмо приходит на ящик-донор и автоматически пересылается в хаб. Настройка разовая, встроена в Gmail.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">ШАГ 02</div>
+        <div class="step-title">Триггер</div>
+        <div class="step-desc">GAS запускается по расписанию (крон) или вручную по команде. Собирает все непрочитанные цепочки.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">ШАГ 03</div>
+        <div class="step-title">Обработка</div>
+        <div class="step-desc">Скрипт извлекает текст, ищет ссылки на отписку (List-Unsubscribe), формирует JSON-пакет.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">ШАГ 04</div>
+        <div class="step-title">Отправка на сервер</div>
+        <div class="step-desc">POST-запрос с секретным токеном. Запросы без токена отбиваются — защита от спама.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">ШАГ 05</div>
+        <div class="step-title">Доставка</div>
+        <div class="step-desc">Сервер форматирует сообщение и отправляет в Telegram. VIP-отправители — мгновенный алерт.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">ШАГ 06</div>
+        <div class="step-title">Маркировка</div>
+        <div class="step-desc">Обработанные письма помечаются PROCESSED. Повторной отправки не будет — идемпотентность гарантирована.</div>
+      </div>
+    </div>
+  </section>
 
-            const handleReplyClick = (target) => {
-                setReplyTarget(target);
-                setReplyState('typing');
-            };
+  <!-- SAFETY -->
+  <section id="safety">
+    <h2>Безопасность</h2>
+    <div class="safety">
+      <div class="safety-title">Принцип делегирования через пересылку</div>
+      <div class="safety-items">
+        <div><span>✓</span> Пароли от оригинальных ящиков нигде не вводятся и не хранятся</div>
+        <div><span>✓</span> Скрипт физически не может прочитать или сломать оригинальный ящик</div>
+        <div><span>✓</span> Работает только со слепками писем в изолированной «песочнице» хаба</div>
+        <div><span>✓</span> API защищён секретным токеном в заголовке запроса (x-hub-token)</div>
+        <div><span>✓</span> Всё работает в облаке Google и DigitalOcean — 24/7 без вмешательства</div>
+      </div>
+    </div>
+  </section>
 
-            const handleUnsubscribe = (id, name) => {
-                setUnsubItems(items => items.map(item => item.id === id ? { ...item, active: false } : item));
-                setUnsubMessage(`✅ Успешно отписано от: ${name}`);
-                setTimeout(() => setUnsubMessage(null), 3000);
-            };
+  <!-- FEATURES -->
+  <section id="features">
+    <h2>Возможности</h2>
+    <div class="features">
+      <div class="feat-card">
+        <div class="feat-title">
+          Крон-дайджест
+          <span class="badge badge-mvp">MVP</span>
+        </div>
+        <div class="feat-desc">Автоматическая отправка сводки по расписанию. Настраиваемый интервал.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-title">
+          Дайджест по запросу
+          <span class="badge badge-mvp">MVP</span>
+        </div>
+        <div class="feat-desc">Команда в Telegram — получаешь сводку прямо сейчас, в любое время.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-title">
+          VIP-алерты
+          <span class="badge badge-mvp">MVP</span>
+        </div>
+        <div class="feat-desc">Список важных отправителей. Их письма приходят мгновенно, не ждут крона.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-title">
+          Retry-логика
+          <span class="badge badge-mvp">MVP</span>
+        </div>
+        <div class="feat-desc">Если сервер упал, письмо помечается API_ERROR и повторяется при следующем запуске.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-title">
+          Фильтры по ящикам
+          <span class="badge badge-later">Позже</span>
+        </div>
+        <div class="feat-desc">Исключать отдельные ящики-доноры из дайджеста. Гибкая настройка источников.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-title">
+          Фильтры по времени
+          <span class="badge badge-later">Позже</span>
+        </div>
+        <div class="feat-desc">Собирать письма только за определённый период. Кастомные временные окна.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-title">
+          Кнопки отписки
+          <span class="badge badge-later">Позже</span>
+        </div>
+        <div class="feat-desc">Автоматически извлекать ссылки List-Unsubscribe и давать кнопку прямо в Telegram.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-title">
+          Кастомный расписание
+          <span class="badge badge-later">Позже</span>
+        </div>
+        <div class="feat-desc">Разные интервалы для разных ящиков. Настройка через команды в боте.</div>
+      </div>
+    </div>
+  </section>
 
-            const handleDisconnectAccount = (id) => {
-                setAccounts(accounts.filter(acc => acc.id !== id));
-            };
+  <!-- STACK -->
+  <section>
+    <h2>Технический стек</h2>
+    <div class="stack">
+      <span class="pill">Google Apps Script</span>
+      <span class="pill">Gmail API</span>
+      <span class="pill">Node.js</span>
+      <span class="pill">PM2</span>
+      <span class="pill">DigitalOcean</span>
+      <span class="pill">Telegram Bot API</span>
+      <span class="pill">PropertiesService</span>
+      <span class="pill">x-hub-token</span>
+    </div>
+  </section>
 
-            const tabs = [
-                { id: 'digest', label: '1. Утренний Дайджест', icon: 'mail', desc: 'Сводка за ночь' },
-                { id: 'search', label: '2. Умный поиск', icon: 'search', desc: 'По всем ящикам сразу' },
-                { id: 'unsubscribe', label: '3. Топ Отписок', icon: 'trash-2', desc: 'Убрать спам навсегда' },
-                { id: 'settings', label: '4. Управление ящиками', icon: 'settings', desc: 'Добавить / отключить' }
-            ];
+</main>
 
-            const renderTelegramMockup = () => (
-                <div className="w-[320px] h-[600px] bg-black rounded-[35px] p-2 shadow-2xl relative border-[6px] border-gray-900 flex flex-col mx-auto overflow-hidden">
-                    <div className="bg-[#5B90B9] text-white p-3 pt-8 flex items-center z-0 shrink-0 relative">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-blue-400 to-blue-600 rounded-full flex items-center justify-center font-bold shadow-sm border border-white/20 text-white">
-                            <Icon name="bot" className="w-6 h-6" />
-                        </div>
-                        <div className="ml-3">
-                            <div className="font-semibold text-[16px] leading-tight tracking-wide">Mail Agent</div>
-                            <div className="text-[12px] text-blue-100/80">bot</div>
-                        </div>
-                        <div className="absolute top-2 right-4 text-xs font-medium text-white/90">10:41</div>
-                    </div>
+<footer>
+  Почтовый агент · Концепция v0.1
+</footer>
 
-                    <div className="flex-1 overflow-y-auto p-3 space-y-4 telegram-bg flex flex-col justify-end pb-4 relative">
-                        <div className="flex flex-col space-y-4 w-full h-full justify-start mt-2">
-
-                            {/* DIGEST — Overview */}
-                            {activeTab === 'digest' && digestView === 'overview' && replyState === 'none' && (
-                                <div className="flex flex-col space-y-4">
-                                    <div className="flex flex-col max-w-[88%] animate-in">
-                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                            <b>Привет! 👋</b><br/><br/>
-                                            <b>📅 Дайджест 22 апреля</b><br/><br/>
-                                            🔴 <b>Важное:</b> 2 письма<br/>
-                                            📰 <b>Новости:</b> 1 письмо<br/>
-                                            🟡 <b>К сведению:</b> 5 писем<br/>
-                                            🔵 <b>Рассылки:</b> 14 писем<br/>
-                                            <span className="float-right text-[10px] text-gray-400 mt-1">09:00</span>
-                                        </div>
-                                        <div className="flex flex-col gap-[2px] mt-[2px]">
-                                            <div className="flex gap-[2px]">
-                                                <button onClick={() => setDigestView('important')} className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">🔴 Важное (2)</button>
-                                                <button onClick={() => setDigestView('news')} className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">📰 Новости (1)</button>
-                                            </div>
-                                            <div className="flex gap-[2px]">
-                                                <button onClick={() => setActiveTab('search')} className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">🔍 Поиск</button>
-                                                <button onClick={() => setActiveTab('settings')} className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">⚙️ Ящики</button>
-                                            </div>
-                                            <button onClick={() => setActiveTab('unsubscribe')} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform mt-[2px]">🗑 Топ отписок</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* DIGEST — Important */}
-                            {activeTab === 'digest' && digestView === 'important' && !openedEmail && replyState === 'none' && (
-                                <div className="flex flex-col max-w-[88%] animate-in">
-                                    <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                        <b>🔴 Важное (2)</b><br/><br/>
-                                        1. <b>Иван:</b> Договор на подпись<br/>
-                                        <span className="text-gray-500 text-[13px]">Просит подписать до пятницы</span><br/><br/>
-                                        2. <b>Acme Bank:</b> Платёж отклонен<br/>
-                                        <span className="text-gray-500 text-[13px]">Недостаточно средств</span>
-                                        <span className="float-right text-[10px] text-gray-400 mt-1">09:01</span>
-                                    </div>
-                                    <div className="flex flex-col gap-[2px] mt-[2px]">
-                                        <div className="flex gap-[2px]">
-                                            <button onClick={() => setOpenedEmail('ivan')} className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">📖 Открыть 1</button>
-                                            <button onClick={() => setOpenedEmail('bank')} className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">📖 Открыть 2</button>
-                                        </div>
-                                        <button onClick={() => setDigestView('overview')} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">« Назад в меню</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* DIGEST — News */}
-                            {activeTab === 'digest' && digestView === 'news' && replyState === 'none' && (
-                                <div className="flex flex-col max-w-[88%] animate-in">
-                                    <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                        <b>📰 Новости: Саммари</b><br/>
-                                        От: TechCrunch Weekly<br/>
-                                        <hr className="my-2 border-gray-100"/>
-                                        • <b>ИИ:</b> Компании привлекли $2 млрд.<br/>
-                                        • <b>Гаджеты:</b> Вышел процессор M5.<br/>
-                                        • <b>Стартапы:</b> 5 новых ИИ-сервисов.<br/>
-                                        <span className="float-right text-[10px] text-gray-400 mt-1">09:01</span>
-                                    </div>
-                                    <div className="flex flex-col gap-[2px] mt-[2px]">
-                                        <button onClick={() => setDigestView('overview')} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">« Назад в меню</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* DIGEST — Open email Ivan */}
-                            {activeTab === 'digest' && openedEmail === 'ivan' && replyState === 'none' && (
-                                <div className="flex flex-col max-w-[88%] animate-in">
-                                    <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                        <b>От:</b> Иван Петров<br/>
-                                        <b>Тема:</b> Договор на подпись<br/>
-                                        <hr className="my-2 border-gray-100"/>
-                                        Привет! Посмотри, пожалуйста, приложенный договор. Нужно подписать до пятницы, иначе сорвем сроки.<br/><br/>
-                                        <div className="bg-blue-50/50 p-2 rounded-lg text-[12px] text-blue-700 font-medium flex items-center gap-2 border border-blue-100/50">
-                                            <Icon name="file-code" className="w-4 h-4" /> dogovor_v2.pdf
-                                        </div>
-                                        <span className="float-right text-[10px] text-gray-400 mt-1">09:02</span>
-                                    </div>
-                                    <div className="flex flex-col gap-[2px] mt-[2px]">
-                                        <button onClick={() => handleReplyClick('ivan')} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">✍️ Ответить Ивану</button>
-                                        <button onClick={() => setOpenedEmail(null)} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">« Назад</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* DIGEST — Open email Bank */}
-                            {activeTab === 'digest' && openedEmail === 'bank' && replyState === 'none' && (
-                                <div className="flex flex-col max-w-[88%] animate-in">
-                                    <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                        <b>От:</b> Acme Bank<br/>
-                                        <b>Тема:</b> Платёж отклонен<br/>
-                                        <hr className="my-2 border-gray-100"/>
-                                        Уважаемый клиент, ваша попытка оплаты подписки на сумму $15.00 была отклонена из-за недостатка средств.
-                                        <span className="float-right text-[10px] text-gray-400 mt-1">09:02</span>
-                                    </div>
-                                    <div className="flex flex-col gap-[2px] mt-[2px]">
-                                        <button onClick={() => setOpenedEmail(null)} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">« Назад к списку</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* SEARCH */}
-                            {activeTab === 'search' && (
-                                <div className="flex flex-col space-y-4">
-                                    {searchState === 'idle' && (
-                                        <div className="flex flex-col max-w-[88%] animate-in">
-                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                                <b>🔎 Умный поиск</b><br/><br/>
-                                                Напиши, что нужно найти. Я просканирую все подключенные ящики сразу.
-                                                <span className="float-right text-[10px] text-gray-400 mt-1">10:45</span>
-                                            </div>
-                                            <div className="flex flex-col gap-[2px] mt-[2px]">
-                                                <button onClick={startSearch} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">🔍 Пример: письма от Антона</button>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {(searchState === 'typing' || searchState === 'searching' || searchState === 'results') && (
-                                        <div className="flex justify-end animate-in">
-                                            <div className="bg-[#EEFFDE] text-gray-900 p-2.5 px-3.5 rounded-2xl rounded-br-none shadow-sm text-[14px] max-w-[85%] relative">
-                                                было что-то от Антона на этой неделе?
-                                                <span className="float-right text-[10px] text-green-700/60 mt-2 ml-3 flex items-center gap-0.5">
-                                                    10:45 <Icon name="check-check" className="w-3 h-3" />
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {searchState === 'searching' && (
-                                        <div className="flex justify-start animate-in">
-                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] flex items-center gap-2 max-w-[88%]">
-                                                <Icon name="loader-2" className="w-4 h-4 text-[#2a83e5] animate-spin" />
-                                                <span className="text-gray-600">Ищу по всем ящикам...</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {searchState === 'results' && !openedEmail && replyState === 'none' && (
-                                        <div className="flex flex-col max-w-[88%] animate-in">
-                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                                <b>Нашёл 2 письма:</b><br/><br/>
-                                                1. <b>19 апр</b> - «Встреча в четверг»<br/>
-                                                <span className="text-gray-500 text-[13px]">(ты не ответил)</span><br/><br/>
-                                                2. <b>21 апр</b> - «Напоминание про встречу»
-                                                <span className="float-right text-[10px] text-gray-400 mt-1">10:46</span>
-                                            </div>
-                                            <div className="flex flex-col gap-[2px] mt-[2px]">
-                                                <div className="flex gap-[2px]">
-                                                    <button className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">📖 Открыть 1</button>
-                                                    <button onClick={() => setOpenedEmail('anton_2')} className="flex-1 bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">📖 Открыть 2</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {searchState === 'results' && openedEmail === 'anton_2' && replyState === 'none' && (
-                                        <div className="flex flex-col max-w-[88%] animate-in">
-                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                                <b>От:</b> Антон (anton@company.com)<br/>
-                                                <b>Тема:</b> Напоминание про встречу<br/>
-                                                <hr className="my-2 border-gray-100"/>
-                                                Привет! Завтра все в силе? Во сколько точно созваниваемся?
-                                                <span className="float-right text-[10px] text-gray-400 mt-1">10:46</span>
-                                            </div>
-                                            <div className="flex flex-col gap-[2px] mt-[2px]">
-                                                <button onClick={() => handleReplyClick('anton')} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">✍️ Ответить Антону</button>
-                                                <button onClick={() => setOpenedEmail(null)} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">« Назад к поиску</button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* UNSUBSCRIBE */}
-                            {activeTab === 'unsubscribe' && (
-                                <div className="flex flex-col space-y-4">
-                                    <div className="flex flex-col max-w-[88%] animate-in">
-                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                            <b>🗑 Топ спамеров за месяц</b><br/><br/>
-                                            {unsubItems.map((item, idx) => (
-                                                <div key={item.id} className={item.active ? '' : 'hidden'}>
-                                                    {idx + 1}. {item.name} ({item.count} писем)<br/>
-                                                </div>
-                                            ))}
-                                            {unsubItems.every(i => !i.active) && <div className="text-gray-500 italic">Свободно от спама!</div>}
-                                            <br/>
-                                            <i>Нажми кнопку ниже, чтобы отписаться навсегда.</i>
-                                            <span className="float-right text-[10px] text-gray-400 mt-1">11:15</span>
-                                        </div>
-                                        <div className="flex flex-col gap-[2px] mt-[2px]">
-                                            {unsubItems.map(item => item.active && (
-                                                <button key={item.id} onClick={() => handleUnsubscribe(item.id, item.name)} className="w-full bg-white/90 hover:bg-white text-red-500 font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform">
-                                                    ❌ Отписаться от {item.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    {unsubMessage && (
-                                        <div className="flex justify-start animate-in">
-                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] flex items-center gap-2 max-w-[88%] border-l-4 border-green-500">
-                                                {unsubMessage}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* SETTINGS */}
-                            {activeTab === 'settings' && (
-                                <div className="flex flex-col space-y-4">
-                                    <div className="flex flex-col max-w-[88%] animate-in">
-                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                            <b>⚙️ Управление ящиками</b><br/><br/>
-                                            Сейчас подключено ({accounts.length}):<br/>
-                                            {accounts.map((acc, idx) => (
-                                                <div key={acc.id} className="mt-1 flex items-center justify-between">
-                                                    <span>{idx + 1}. {acc.email}</span>
-                                                </div>
-                                            ))}
-                                            {accounts.length === 0 && <div className="text-gray-500 italic mt-1">Нет подключенных ящиков</div>}
-                                            <span className="float-right text-[10px] text-gray-400 mt-4">12:00</span>
-                                        </div>
-                                        <div className="flex flex-col gap-[2px] mt-[2px]">
-                                            {accounts.map(acc => (
-                                                <button key={acc.id} onClick={() => handleDisconnectAccount(acc.id)} className="w-full bg-white/90 hover:bg-white text-red-500 font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                                    ❌ Отключить {acc.email.split('@')[0]}
-                                                </button>
-                                            ))}
-                                            <button onClick={() => setConnectState('connecting')} className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform flex items-center justify-center gap-2 mt-1">
-                                                <Icon name="plus" className="w-4 h-4" /> Добавить аккаунт Google
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {connectState === 'connecting' && (
-                                        <div className="flex flex-col max-w-[88%] animate-in">
-                                            <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] relative">
-                                                Для подключения нового ящика перейдите по безопасной ссылке авторизации:
-                                                <span className="float-right text-[10px] text-gray-400 mt-1">12:01</span>
-                                            </div>
-                                            <div className="flex flex-col gap-[2px] mt-[2px]">
-                                                <button className="w-full bg-white/90 hover:bg-white text-[#2a83e5] font-medium py-2.5 rounded-lg shadow-sm text-[13px] active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                                    🔗 Авторизовать через Google
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* REPLY STATE */}
-                            {replyState === 'typing' && (
-                                <div className="flex flex-col space-y-4 animate-in">
-                                    <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] border-l-4 border-[#2a83e5] relative max-w-[88%]">
-                                        {replyTarget === 'ivan' ? (
-                                            <>Ответ на: <b>«Договор на подпись»</b><br/><i className="text-gray-500 text-[13px]">Посмотри приложенный договор...</i></>
-                                        ) : (
-                                            <>Ответ на: <b>«Напоминание про встречу»</b><br/><i className="text-gray-500 text-[13px]">Завтра все в силе? Во сколько?</i></>
-                                        )}
-                                    </div>
-                                    <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] max-w-[88%] relative">
-                                        Жду текст ответа. Отправлю его с ящика, на который пришло письмо.
-                                        <span className="float-right text-[10px] text-gray-400 mt-1">12:05</span>
-                                    </div>
-                                </div>
-                            )}
-                            {replyState === 'sent' && (
-                                <div className="flex flex-col space-y-4 animate-in">
-                                    <div className="flex justify-end">
-                                        <div className="bg-[#EEFFDE] text-gray-900 p-2.5 px-3.5 rounded-2xl rounded-br-none shadow-sm text-[14px] max-w-[85%] relative">
-                                            {replyTarget === 'ivan' ? 'Привет, договор проверил, всё ок. Подпишу вечером.' : 'Привет! Да, буду. В 15:00 ок?'}
-                                            <span className="float-right text-[10px] text-green-700/60 mt-2 ml-3 flex items-center gap-0.5">
-                                                12:06 <Icon name="check-check" className="w-3 h-3" />
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-start">
-                                        <div className="bg-white text-gray-800 p-3 rounded-2xl rounded-bl-none shadow-sm text-[14px] flex items-center gap-2 max-w-[88%]">
-                                            <Icon name="check-circle-2" className="w-4 h-4 text-green-500" />
-                                            Письмо успешно отправлено!
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Input bar */}
-                    <div className="bg-white p-2 flex gap-2 shrink-0 rounded-[20px] rounded-t-sm items-center px-3 relative z-20 mx-1 mb-1">
-                        <Icon name="paperclip" className="w-5 h-5 text-gray-400 shrink-0" />
-                        <div className="flex-1 h-9 bg-transparent flex items-center px-1 text-[14px] overflow-hidden">
-                            <span className={`truncate ${(replyState === 'sent') || (activeTab === 'search' && searchState !== 'idle' && searchState !== 'typing') ? 'text-gray-400' : 'text-gray-800'}`}>
-                                {activeTab === 'search' && searchState === 'idle' ? 'Найти письмо...' :
-                                 activeTab === 'search' && searchState === 'typing' ? 'было что-то от Антона на этой неделе?' :
-                                 activeTab === 'search' && searchState !== 'idle' ? 'Поиск...' :
-                                 replyState === 'typing' && replyTarget === 'ivan' ? 'Привет, договор проверил...' : 
-                                 replyState === 'typing' && replyTarget === 'anton' ? 'Привет! Да, буду. В 15:00...' : 
-                                 'Сообщение...'}
-                            </span>
-                        </div>
-                        <button onClick={() => { if (replyState === 'typing') setReplyState('sent'); }}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${replyState === 'typing' ? 'bg-[#2a83e5] hover:bg-blue-600 active:scale-90' : 'bg-transparent'}`}>
-                            <Icon name={replyState === 'typing' ? "arrow-up" : "mic"} className={`w-5 h-5 ${replyState === 'typing' ? 'text-white' : 'text-gray-400'}`} />
-                        </button>
-                    </div>
-                </div>
-            );
-
-            return (
-                <div className="min-h-screen p-4 md:p-8">
-                    <div className="max-w-6xl mx-auto space-y-8">
-
-                        {/* HEADER */}
-                        <header className="text-center space-y-2 py-8">
-                            <h1 className="text-4xl font-extrabold text-gray-900">Mail Agent Bot</h1>
-                            <p className="text-xl text-gray-500">Автономный помощник для управления почтой в Telegram</p>
-                        </header>
-
-                        {/* SECTION 1: UX Demo */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100">
-                            <div className="space-y-6">
-                                <h2 className="text-2xl font-bold flex items-center gap-3">
-                                    <Icon name="smartphone" className="w-6 h-6 text-blue-500" />
-                                    UX и навигация
-                                </h2>
-                                <p className="text-gray-600 text-[15px] leading-relaxed">
-                                    Переключайтесь между вкладками ниже, чтобы посмотреть, как бот реагирует на команды. Справа — интерактивный мокап интерфейса Telegram. Вся работа с почтой происходит через Inline-кнопки без выхода из мессенджера.
-                                </p>
-                                <div className="flex flex-col gap-3 pt-4">
-                                    {tabs.map(tab => (
-                                        <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                                            className={`flex items-center gap-4 p-4 rounded-xl text-left transition-all ${activeTab === tab.id ? 'bg-blue-50 border-blue-200 border shadow-sm' : 'bg-gray-50 border border-transparent hover:bg-gray-100'}`}>
-                                            <div className={`p-2 rounded-lg ${activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-white text-gray-500 shadow-sm'}`}>
-                                                <Icon name={tab.icon} className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <div className={`font-semibold ${activeTab === tab.id ? 'text-blue-900' : 'text-gray-700'}`}>{tab.label}</div>
-                                                <div className="text-xs text-gray-400 mt-0.5">{tab.desc}</div>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex justify-center py-4">
-                                {renderTelegramMockup()}
-                            </div>
-                        </div>
-
-                        {/* SECTION 2: Bot Flow */}
-                        <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 space-y-8">
-                            <div className="space-y-3">
-                                <h2 className="text-2xl font-bold flex items-center gap-3">
-                                    <Icon name="git-branch" className="w-6 h-6 text-blue-500" />
-                                    Флоу бота: как это работает
-                                </h2>
-                                <p className="text-gray-600">Полный путь пользователя от запуска до отправки ответа.</p>
-                            </div>
-
-                            {/* Flow Diagram */}
-                            <div className="overflow-x-auto pb-4">
-                                {/* Row 1: Start → Onboarding → Main Menu */}
-                                <div className="flex items-center gap-0 min-w-[600px] mb-6">
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="bg-blue-600 text-white rounded-xl px-4 py-3 text-center text-sm font-bold w-full max-w-[140px] mx-auto shadow">
-                                            🚀 /start
-                                        </div>
-                                        <div className="text-xs text-gray-400 mt-1">Пользователь запускает бота</div>
-                                    </div>
-                                    <div className="text-gray-300 text-2xl mx-2 self-start mt-3">→</div>
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 text-center text-sm font-semibold text-indigo-800 w-full max-w-[140px] mx-auto">
-                                            🔗 Авторизация Google
-                                        </div>
-                                        <div className="text-xs text-gray-400 mt-1">OAuth — 1 раз</div>
-                                    </div>
-                                    <div className="text-gray-300 text-2xl mx-2 self-start mt-3">→</div>
-                                    <div className="flex flex-col items-center flex-1">
-                                        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center text-sm font-semibold text-blue-800 w-full max-w-[140px] mx-auto">
-                                            📋 Главное меню
-                                        </div>
-                                        <div className="text-xs text-gray-400 mt-1">4 раздела</div>
-                                    </div>
-                                </div>
-
-                                {/* Row 2: 4 branches */}
-                                <div className="grid grid-cols-4 gap-3 min-w-[600px]">
-                                    {/* Branch 1 */}
-                                    <div className="flex flex-col gap-2">
-                                        <div className="text-center text-gray-300 text-lg">↓</div>
-                                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center text-xs font-semibold text-red-700">🔴 Дайджест</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 text-center text-[11px] text-gray-600">Важное / Новости<br/>К сведению</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 text-center text-[11px] text-gray-600">Открыть письмо</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-green-50 border border-green-200 rounded-xl p-2 text-center text-[11px] text-green-700 font-medium">✍️ Ответить</div>
-                                    </div>
-                                    {/* Branch 2 */}
-                                    <div className="flex flex-col gap-2">
-                                        <div className="text-center text-gray-300 text-lg">↓</div>
-                                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center text-xs font-semibold text-blue-700">🔍 Умный поиск</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 text-center text-[11px] text-gray-600">Запрос свободным текстом</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 text-center text-[11px] text-gray-600">Список результатов</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-green-50 border border-green-200 rounded-xl p-2 text-center text-[11px] text-green-700 font-medium">✍️ Открыть / Ответить</div>
-                                    </div>
-                                    {/* Branch 3 */}
-                                    <div className="flex flex-col gap-2">
-                                        <div className="text-center text-gray-300 text-lg">↓</div>
-                                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-center text-xs font-semibold text-orange-700">🗑 Топ отписок</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 text-center text-[11px] text-gray-600">Список спамеров<br/>за последний месяц</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-green-50 border border-green-200 rounded-xl p-2 text-center text-[11px] text-green-700 font-medium">❌ Отписаться<br/>в 1 клик</div>
-                                    </div>
-                                    {/* Branch 4 */}
-                                    <div className="flex flex-col gap-2">
-                                        <div className="text-center text-gray-300 text-lg">↓</div>
-                                        <div className="bg-gray-100 border border-gray-300 rounded-xl p-3 text-center text-xs font-semibold text-gray-700">⚙️ Мои ящики</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 text-center text-[11px] text-gray-600">Список аккаунтов</div>
-                                        <div className="text-center text-gray-300">↓</div>
-                                        <div className="bg-green-50 border border-green-200 rounded-xl p-2 text-center text-[11px] text-green-700 font-medium">➕ Добавить<br/>❌ Отключить</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* SECTION 3: Architecture */}
-                        <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 space-y-8">
-                            <div className="space-y-3">
-                                <h2 className="text-2xl font-bold flex items-center gap-3">
-                                    <Icon name="server" className="w-6 h-6 text-blue-500" />
-                                    Надежная архитектура системы
-                                </h2>
-                                <p className="text-gray-600 text-lg">
-                                    Стабильное решение. Нейросеть агрегирует почту, анализирует контекст и выдает результат в единое окно управления.
-                                </p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="bg-red-50 p-6 rounded-2xl border border-red-100 flex flex-col items-start">
-                                    <Icon name="mail" className="w-8 h-8 text-red-600 mb-4" />
-                                    <h3 className="font-bold text-lg mb-2 text-gray-900">Gmail API</h3>
-                                    <p className="text-sm text-gray-600 leading-relaxed">Наш сервер по расписанию авторизуется через официальный API Google и собирает письма со всех подключенных личных и корпоративных ящиков.</p>
-                                </div>
-                                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 flex flex-col items-start">
-                                    <Icon name="brain-circuit" className="w-8 h-8 text-purple-600 mb-4" />
-                                    <h3 className="font-bold text-lg mb-2 text-gray-900">ИИ-ядро</h3>
-                                    <p className="text-sm text-gray-600 leading-relaxed">ИИ читает массивы текстов, классифицирует их по важности, генерирует короткие саммари длинных переписок и формирует черновики ответов строго по вашим правилам.</p>
-                                </div>
-                                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex flex-col items-start">
-                                    <Icon name="smartphone" className="w-8 h-8 text-blue-600 mb-4" />
-                                    <h3 className="font-bold text-lg mb-2 text-gray-900">Telegram Bot</h3>
-                                    <p className="text-sm text-gray-600 leading-relaxed">Единый пульт управления. Итоговый результат отправляется в Telegram, откуда вы управляете всеми своими ящиками, отписками и ответами в один клик.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* SECTION 4: OAuth Security */}
-                        <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 space-y-8">
-                            <div className="space-y-3">
-                                <h2 className="text-2xl font-bold flex items-center gap-3">
-                                    <Icon name="shield-check" className="w-6 h-6 text-green-500" />
-                                    Безопасность и конфиденциальность
-                                </h2>
-                                <p className="text-gray-600 text-lg">
-                                    Вы подключаете почту один раз через стандартный экран Google. Разработчик не имеет доступа к вашему паролю и не видит содержимое писем напрямую.
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* OAuth Flow Visual */}
-                                <div className="bg-gray-50 rounded-2xl p-6 space-y-4">
-                                    <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Icon name="key" className="w-5 h-5 text-yellow-500" />
-                                        Как работает подключение
-                                    </h3>
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Нажимаете «Добавить аккаунт»</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">Бот отправляет ссылку на авторизацию</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Открывается официальная страница Google</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">Стандартный «Войти через Google» — тот же, что у любого сервиса</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Вы входите на стороне Google</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">Пароль вводится на серверах Google — мы его не видим</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Google выдаёт зашифрованный токен</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">Только этот токен хранится у нас — не пароль, не данные аккаунта</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Guarantees */}
-                                <div className="space-y-4">
-                                    <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Icon name="check-circle-2" className="w-5 h-5 text-green-500" />
-                                        Что мы гарантируем
-                                    </h3>
-                                    <div className="flex gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
-                                        <Icon name="lock" className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Пароль не передаётся</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">Мы никогда не видим и не храним ваш Google-пароль</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
-                                        <Icon name="eye-off" className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Письма только для агента</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">Доступ к содержимому имеет только ИИ-агент, разработчик — нет</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
-                                        <Icon name="unplug" className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Отключение в один клик</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">Токен удаляется мгновенно. Доступ прекращается сразу</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                                        <Icon name="globe" className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                                        <div>
-                                            <div className="font-semibold text-sm text-gray-800">Стандарт индустрии</div>
-                                            <div className="text-xs text-gray-500 mt-0.5">OAuth 2.0 — та же схема, что в Notion, Slack, Figma и тысячах других сервисов</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
 </body>
 </html>
